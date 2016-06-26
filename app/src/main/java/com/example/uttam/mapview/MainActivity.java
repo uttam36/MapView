@@ -1,13 +1,20 @@
 package com.example.uttam.mapview;
 
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -23,22 +30,24 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
+import java.util.List;
 
 public class MainActivity extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener,GoogleMap.OnMarkerDragListener, GoogleMap.OnMapClickListener {
+        GoogleApiClient.OnConnectionFailedListener,GoogleMap.OnMarkerDragListener {
 
-    private final int MY_PERMISSIONS_LOCATION = 10;
+
     private static final String TAG = MainActivity.class.getSimpleName();
-
+    private static final String key = "saveLocation";
     // Google client to interact with Google API
     private GoogleApiClient mGoogleApiClient;
     private Location mLastLocation;
-
+    private Button bSave,bSearch;
+    private EditText eText;
     private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 1000;
 
 
     private GoogleMap mMap;
-    private LatLng MyLocation;
+    private LatLng MyLocation=null;
     static final int ZOOM_LEVEL = 15;
 
     @Override
@@ -46,9 +55,48 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        bSave = (Button)findViewById(R.id.bSave);
+        bSearch = (Button)findViewById(R.id.bSearch);
+        eText = (EditText)findViewById(R.id.searchView1);
         if(checkPlayServices())
             buildGoogleApiClient();
 
+        bSave.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                String location = MyLocation.latitude+" "+MyLocation.longitude;
+                editor.putString(key,location);
+                editor.commit();
+                onBackPressed();
+            }
+        });
+
+        bSearch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                String g = eText.getText().toString();
+
+                Geocoder geocoder = new Geocoder(getBaseContext());
+                List<Address> addresses = null;
+
+                try {
+                    // Getting a maximum of 3 Address that matches the input
+                    // text
+                    addresses = geocoder.getFromLocationName(g, 3);
+                    if (addresses != null && !addresses.equals(""))
+                        search(addresses);
+                    else
+                        Toast.makeText(getApplicationContext(),"Sorry Could Not Find Location",Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(getApplicationContext(),"Sorry Could Not Find Location",Toast.LENGTH_LONG).show();
+                }
+
+            }
+        });
     }
 
     @Override
@@ -80,7 +128,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         mMap.moveCamera(CameraUpdateFactory.newLatLng(MyLocation));
         mMap.setOnMarkerDragListener(this);
-        mMap.setOnMapClickListener(this);
         Log.v("zoom level", String.valueOf(mMap.getMaxZoomLevel()));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(ZOOM_LEVEL));
     }
@@ -100,11 +147,18 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
         mLastLocation = LocationServices.FusedLocationApi
                 .getLastLocation(mGoogleApiClient);
-        Log.v("latitude and longitude","hey");
+
         if (mLastLocation != null) {
             double latitude = mLastLocation.getLatitude();
             double longitude = mLastLocation.getLongitude();
-            MyLocation = new LatLng(latitude,longitude);
+            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+            String location = sharedPreferences.getString(key,null);
+          //  Log.v("latitude and longitude",location);
+            if(location==null)
+                MyLocation = new LatLng(latitude,longitude);
+            else
+                MyLocation = new LatLng(Double.parseDouble(location.split(" ",2)[0]),Double.parseDouble(location.split(" ",2)[1]));
+
             Log.v("latitude and longitude", latitude + " " + longitude);
         }
 
@@ -167,29 +221,52 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    protected void search(List<Address> addresses) {
+
+        Address address = (Address) addresses.get(0);
+        MyLocation = new LatLng(address.getLatitude(), address.getLongitude());
+
+      /*  addressText = String.format(
+                "%s, %s",
+                address.getMaxAddressLineIndex() > 0 ? address
+                        .getAddressLine(0) : "", address.getCountryName());*/
+
+        MarkerOptions markerOptions = new MarkerOptions();
+
+        markerOptions.position(MyLocation);
+       // markerOptions.title(addressText);
+        markerOptions.draggable(true);
+        mMap.clear();
+        mMap.addMarker(markerOptions);
+        mMap.setOnMarkerDragListener(this);
+
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(MyLocation));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(ZOOM_LEVEL));
+       // locationTv.setText("Latitude:" + address.getLatitude() + ", Longitude:"
+       //         + address.getLongitude());
+
+
+    }
+
     @Override
     public void onMarkerDragStart(Marker marker) {
 
-        Log.v("My location", String.valueOf(MyLocation)+" s");
+        Log.v("My location", String.valueOf(MyLocation));
     }
 
     @Override
     public void onMarkerDrag(Marker marker) {
 
-        Log.v("My location", String.valueOf(MyLocation)+" cv");
+        Log.v("My location", String.valueOf(MyLocation));
     }
 
     @Override
     public void onMarkerDragEnd(Marker marker) {
         MyLocation = marker.getPosition();
-        Log.v("My location", String.valueOf(MyLocation)+" xx");
+        Log.v("My location", String.valueOf(MyLocation));
         Toast.makeText(getApplicationContext(),"Marker Dragged",Toast.LENGTH_LONG).show();
     }
-    @Override
-    public void onMapClick(LatLng arg0) {
-        // TODO Auto-generated method stub
-        mMap.animateCamera(CameraUpdateFactory.newLatLng(arg0));
-    }
+
 }
 
 

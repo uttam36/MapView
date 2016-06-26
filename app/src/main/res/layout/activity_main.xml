@@ -1,8 +1,45 @@
-<?xml version="1.0" encoding="utf-8"?>
 <fragment xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/map"
+    android:name="com.google.android.gms.maps.SupportMapFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/map"
-    tools:context=".MainActivity"
-    android:name="com.google.android.gms.maps.SupportMapFragment" />
+    tools:context="com.example.uttam.mapview.MainActivity">
+
+
+    <Button
+        android:id="@+id/bSave"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right|bottom"
+        android:text="Save Location"
+        android:padding="10dp"
+        android:layout_marginTop="20dp"
+        android:paddingRight="10dp"/>
+
+    <Button
+        android:id="@+id/bSearch"
+        android:layout_width="95dp"
+        android:layout_height="35dp"
+        android:layout_gravity="right|top"
+        android:text="Go"
+        android:layout_alignBaseline="@+id/searchView1"
+        android:layout_alignBottom="@+id/searchView1"
+        android:layout_alignRight="@+id/searchView1"
+        android:layout_marginTop="14dp"
+        />
+
+    <EditText
+        android:id="@+id/searchView1"
+        android:layout_width="250dp"
+        android:layout_height="34dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="18dp"
+        android:layout_marginTop="14dp"
+        android:hint="Search Location"
+        android:textColor="@android:color/black"
+        android:background="@android:color/white" >
+    </EditText>
+
+</fragment>
